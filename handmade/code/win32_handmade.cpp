@@ -1,127 +1,173 @@
 #include <windows.h>
 
+#define internal static
+#define local_persist static
+#define global_variable static
+
+global_variable bool Running;
+global_variable BITMAPINFO BitmapInfo;
+global_variable void *BitmapMemory;
+global_variable HBITMAP BitmapHandle;
+global_variable HDC BitmapDeviceContext;
+
+internal void 
+Win32ResizeDIBSection(int Width, int Height)
+{
+    if (BitmapHandle)
+    {
+        DeleteObject(BitmapHandle);
+    }
+    if(!BitmapDeviceContext)
+    {
+        BitmapDeviceContext = CreateCompatibleDC(0);
+    }
+
+    BitmapInfo.bmiHeader.biSize = sizeof(BitmapInfo.bmiHeader);
+    BitmapInfo.bmiHeader.biWidth = Width;
+    BitmapInfo.bmiHeader.biHeight = Height;
+    BitmapInfo.bmiHeader.biPlanes = 1;
+    BitmapInfo.bmiHeader.biBitCount = 32;
+    BitmapInfo.bmiHeader.biCompression = BI_RGB;
+
+    BitmapHandle = CreateDIBSection(
+                                    BitmapDeviceContext,
+                                    &BitmapInfo,
+                                    DIB_RGB_COLORS,
+                                    &BitmapMemory,
+                                    0, 0);
+
+}
+
+internal void
+Win32UpdateWindow(HDC DeviceContext, int X, int Y, int Width, int Height) 
+{
+    StretchDIBits(DeviceContext,
+                  X, Y, Width, Height,
+                  X, Y, Width, Height,
+                  BitmapMemory,
+                  &BitmapInfo,
+                  DIB_RGB_COLORS, SRCCOPY);
+}
 
 LRESULT CALLBACK
-MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
+Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam)
 {
-	LRESULT Result = 0;
-	switch (Message)
-	{
-		case WM_SIZE:
-		{
-			OutputDebugStringA("WN_SIZE\n");
-		} break;
+    LRESULT Result = 0;
+    switch (Message)
+    {
+        case WM_SIZE:
+        {
+            RECT ClientRect;
+            GetClientRect(Window, &ClientRect);
+            int Width = ClientRect.right - ClientRect.left;
+            int Height = ClientRect.bottom - ClientRect.top;
+            Win32ResizeDIBSection(Width, Height);
+            OutputDebugStringA("WN_SIZE\n");
+        } break;
 
-		case WM_DESTROY:
-		{
-			OutputDebugStringA("WM_DESTROY\n");
-		} break;
+        case WM_CLOSE:
+        {
+            Running = false;
+            OutputDebugStringA("WM_CLOSE\n");
+        } break;
 
-		case WM_CLOSE:
-		{
-			OutputDebugStringA("WM_CLOSE\n");
-		} break;
+        case WM_ACTIVATEAPP:
+        {
+            OutputDebugStringA("WM_ACTIVATEAPP\n");
+        } break;
 
-		case WM_ACTIVATEAPP:
-		{
-			OutputDebugStringA("WM_ACTIVATEAPP\n");
-		} break;
+        case WM_DESTROY:
+        {
+            Running = false;
+            OutputDebugStringA("WM_DESTROY\n");
+        } break;
 
-		case WM_PAINT:
-		{
-			OutputDebugStringA("WM_PAINT\n");
-			PAINTSTRUCT paint;
+        case WM_PAINT:
+        {
+            OutputDebugStringA("WM_PAINT\n");
+            PAINTSTRUCT paint;
 
-			HDC DeviceContext = BeginPaint(Window, &paint);
+            HDC DeviceContext = BeginPaint(Window, &paint);
 
-			int X = paint.rcPaint.left;
-			int Y = paint.rcPaint.top;
-			int Height = paint.rcPaint.bottom - paint.rcPaint.top;
-			int Width = paint.rcPaint.right - paint.rcPaint.left;
+            int X = paint.rcPaint.left;
+            int Y = paint.rcPaint.top;
+            int Height = paint.rcPaint.bottom - paint.rcPaint.top;
+            int Width = paint.rcPaint.right - paint.rcPaint.left;
 
-			static DWORD Operation = WHITENESS;
-			PatBlt(DeviceContext, X, Y, Width, Height, Operation);
+            Win32UpdateWindow(DeviceContext, X, Y, Width, Height);
+            
+            EndPaint(Window, &paint);
+        } break;
 
-			if (Operation == WHITENESS)
-			{
-				Operation = BLACKNESS;
-			}
-			else
-			{
-				Operation = WHITENESS;
-			}
+        default:
+        {
+            Result = DefWindowProcA(Window, Message, WParam, LParam);
+            //OutputDebugStringA("default\n");
+        } break;
 
-			EndPaint(Window, &paint);
-		} break;
+    }
 
-		default:
-		{
-			Result = DefWindowProcA(Window, Message, WParam, LParam);
-			//OutputDebugStringA("default\n");
-		} break;
-
-	}
-
-	return Result;
+    return Result;
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode)
 {
 
-	WNDCLASS WindowClass = {};
+    WNDCLASS WindowClass = {};
 
 
-	WindowClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
-	WindowClass.lpfnWndProc = MainWindowCallback;
-	WindowClass.hInstance = Instance;
-	//WindowClass.hIcon;
-	WindowClass.lpszClassName = "HandmadeHeroWindowClass";
+    WindowClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
+    WindowClass.lpfnWndProc = Win32MainWindowCallback;
+    WindowClass.hInstance = Instance;
+    //WindowClass.hIcon;
+    WindowClass.lpszClassName = "HandmadeHeroWindowClass";
 
-	if (RegisterClassA(&WindowClass)) 
-	{
-		HWND WindowHandle = CreateWindowExA(
-			0,
-			WindowClass.lpszClassName,
-			"Handmade Hero",
-			WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-			CW_USEDEFAULT,
-			CW_USEDEFAULT,
-			CW_USEDEFAULT,
-			CW_USEDEFAULT,
-			0,
-			0,
-			Instance,
-			0);
+    if (RegisterClassA(&WindowClass)) 
+    {
+        HWND WindowHandle = CreateWindowExA(
+            0,
+            WindowClass.lpszClassName,
+            "Handmade Hero",
+            WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+            CW_USEDEFAULT,
+            CW_USEDEFAULT,
+            CW_USEDEFAULT,
+            CW_USEDEFAULT,
+            0,
+            0,
+            Instance,
+            0);
 
-		if (WindowHandle)
-		{
-			MSG Message;
+        if (WindowHandle)
+        {
+            Running = true;
 
-			for (;;)
-			{
-				BOOL MessageResult = GetMessageA(&Message, 0, 0, 0) != WM_QUIT;
-				if(MessageResult > 0)
-				{
-					TranslateMessage(&Message);
-					DispatchMessageA(&Message);	
-				}
-				else
-				{
-					break;
-				}
-			}
-			
-		}
-		else
-		{
-			//TODO Log message
-		}
+            while(Running)
+            {
+                MSG Message;
+                BOOL MessageResult = GetMessageA(&Message, 0, 0, 0) ;
+                if(MessageResult > 0)
+                {
+                    TranslateMessage(&Message);
+                    DispatchMessageA(&Message);	
+                }
+                else
+                {
+                    break;
+                }
+            }
+            
+        }
+        else
+        {
+            //TODO Log message
+        }
 
-	}
-	else
-	{
-		//TODO Log message
-	}
+    }
+    else
+    {
+        //TODO Log message
+    }
 
-	return 0;
+    return 0;
 }
