@@ -1,6 +1,8 @@
-#define _CRT_SECURE_NO_WARNINGS
-#include <windows.h>
 #include <stdint.h>
+
+#include "handmade.cpp"
+
+#include <windows.h>
 #include <xinput.h>
 #include <dsound.h>
 
@@ -26,6 +28,7 @@ typedef uint64_t uint64;
 
 typedef float real32;
 typedef double real64;
+
 
 struct win32_offscreen_buffer
 {
@@ -177,25 +180,7 @@ Win32GetWindowDimension(HWND Window)
     return Result;
 }
 
-internal void
-RenderWeirdGradient(win32_offscreen_buffer *Buffer, int BlueOffset, int GreenOffset)
-{
 
-    uint8* Row = (uint8*)Buffer->Memory;
-    for (int Y = 0; Y < Buffer->Height; ++Y)
-    {
-        uint32* Pixel = (uint32*)Row;
-        for (int X = 0; X < Buffer->Width; ++X)
-        {
-            uint8 Blue= (X + BlueOffset);
-            uint8 Green= (Y + GreenOffset);
-
-            *Pixel++ = ( (Green << 8) | Blue);
-        }
-
-        Row += Buffer->Pitch;
-    }
-}
 
 internal void 
 Win32ResizeDIBSection(win32_offscreen_buffer *Buffer, int Width, int Height)
@@ -527,7 +512,12 @@ WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowC
 
                 }
 
-                RenderWeirdGradient(&GlobalBackBuffer, XOffset, YOffset);
+                game_offscreen_buffer Buffer = {};
+                Buffer.Memory = GlobalBackBuffer.Memory;
+                Buffer.Width = GlobalBackBuffer.Width;
+                Buffer.Height = GlobalBackBuffer.Height;
+                Buffer.Pitch = GlobalBackBuffer.Pitch;
+                GameUpdateAndRender(&Buffer, XOffset, YOffset);
 
                 // Direct Sound Output test
                 DWORD PlayCursor;
@@ -569,9 +559,11 @@ WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowC
                 real64 FPS = (real64)PerfCounterFreaquency / (real64)CounterElapsed;
                 real64 MCPF = (real64)((real64)CyclesElapsed / (1000.0f * 1000.0f));
 
+#if 0
                 char Buffer[256];
                 sprintf(Buffer, "%.02fms/f, / %.02ff/s, %.02fmc/f\n", MSPerFrame, FPS, MCPF);
                 OutputDebugStringA(Buffer);
+#endif
 
                 LastCounter = EndCounter;
                 LastCycleCount = EndCycleCount;
