@@ -2,6 +2,14 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <stdint.h>
+#include <stdint.h>
+
+#include <windows.h>
+#include <xinput.h>
+#include <dsound.h>
+
+#include<math.h>
+#include<stdio.h>
 
 #define internal static
 #define local_persist static
@@ -20,3 +28,5 @@ typedef uint64_t uint64;
 
 typedef float real32;
 typedef double real64;
+
+#define Pi32 3.14159265359f
