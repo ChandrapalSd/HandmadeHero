@@ -29,5 +29,8 @@
     <ClInclude Include="code\my_types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="code\win32_handmade.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -25,6 +25,7 @@
   <ItemGroup>
     <ClInclude Include="code\handmade.h" />
     <ClInclude Include="code\my_types.h" />
+    <ClInclude Include="code\win32_handmade.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
