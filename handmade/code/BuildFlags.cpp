@@ -1,3 +1,0 @@
-#define HANDMADE_INTERNAL 1
-#define HANDMADE_SLOW 1 
-#define HANDMADE_WIN32 1

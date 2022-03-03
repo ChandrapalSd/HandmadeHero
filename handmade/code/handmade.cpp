@@ -53,6 +53,15 @@ void GameUpdateAndRender(game_memory *Memory, game_input* Input,
     game_state* GameState = (game_state*)Memory->PermanentStorage;
     if (!Memory->IsInitialized)
     {
+        char* Filename = __FILE__;
+
+        debug_read_file_result File = DEBUGPlatformReadEntireFile(Filename);
+        if (File.Contents)
+        {
+            DEBUGPlatformWriteEntireFile("D:/tempHandmade.out", File.ContentsSize, File.Contents);
+            DEBUGPlatformFreeFileMemory(File.Contents);
+        }
+
         GameState->ToneHz = 256;
 
         // TODO : Maybe more appropriate to do in platform layer
